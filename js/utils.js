@@ -47,13 +47,14 @@ function getEmptyLocations(board) {
     return emptyLocations;
 }
 
-function countMineNegs(cellPos) {
+function countMineNegs(rowIdx, colIdx) {
     var count = 0;
 
-    for (var i = cellPos.i - 1; i < cellPos.i + 1; i++) {
-        if(i >= board.length || i < 0 ) continue;
-        for (var j = cellPos.j - 1; j < cellPos.j + 1; j++) {
-            if(j >= board[0].length || j < 0) continue;
+    for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
+        if(i >= gBoard.length || i < 0 ) continue;
+        for (var j = colIdx - 1; j <= colIdx + 1; j++) {
+            if (i === rowIdx && j === colIdx) continue;
+            if(j >= gBoard[0].length || j < 0) continue;
             var cell = gBoard[i][j];
             if(cell.isMine) count++;
         }

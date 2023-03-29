@@ -23,7 +23,7 @@ function onInit() {
     }
     gBoard = buildBoard();
     setMinesNegsCount(gBoard);
-    renderBoard(gBoard);
+    renderBoard(gBoard, '.board');
 }
 
 // build board - > after placing the mines randomly - > calc the cell contents by counting
@@ -32,20 +32,27 @@ function onInit() {
 function buildBoard() {
     var board = []
 
-    for(var i = 0; i < gLevel.SIZE; i++) {
+    for (var i = 0; i < gLevel.SIZE; i++) {
         board[i] = [];
-        for(var j = 0; j < gLevel.SIZE; j++) {
+        for (var j = 0; j < gLevel.SIZE; j++) {
             board[i][j] = createCell(0);
         }
     }
+
+    board[0][1].isMine = true;
+    board[1][2].isMine = true;
+    board[2][3].isMine = true;
+    board[0][3].isMine = true;
+
+    return board;
 }
 
 function createCell(aroundCount, isShown = false, isMine = false, isMarked = false) {
     var cell = {
         minesAroundCount: aroundCount,
-        isShown: false,
-        isMine: false,
-        isMarked: true
+        isShown: isShown,
+        isMine: isMine,
+        isMarked: isMarked
     }
 
     return cell;
@@ -60,15 +67,47 @@ function setMinesNegsCount(board) {
         for (var j = 0; j < board[0].length; j++) {
             const cell = board[i][j];
             if (cell.isMine) continue;
-            cell.minesAroundCount = countMineNegs({i: i, j: j});
+            cell.minesAroundCount = countMineNegs(i, j);
+            console.log(cell.minesAroundCount);
         }
     }
 }
 
 // pseudo : function renderBoard(board, selector) - iterates through and 
 // depending on the content of the Board Model will render either a mine / empty cell / 
-function renderBoard(board, selector) {
+function renderBoard(mat, selector) {
+    var strHTML = '<table border="0"><tbody>'
+    for (var i = 0; i < mat.length; i++) {
 
+        strHTML += '<tr>'
+        for (var j = 0; j < mat[0].length; j++) {
+            const cell = mat[i][j]
+            var className = `cell cell-${i}-${j}`
+            var cellContent = ' ';
+
+            // if cell is visible render its contents
+            if (cell.isShown) {
+                if (cell.isMine) {
+                    cellContent = MINE;
+                    // maybe add class? className += ' mine';
+                } else {
+                    cellContent = cell.minesAroundCount;
+                    if (cell.minesAroundCount === 0) cellContent = EMPTY;
+                }
+            }
+            // else cell not visible - > show unclicked cell
+            else {
+                className += ' cell-hidden'
+            }
+
+            strHTML += `<td class="${className}" onclick="onCellClicked(this, ${i}, ${j})">${cellContent}</td>`
+        }
+        strHTML += '</tr>'
+    }
+    strHTML += '</tbody></table>'
+
+    const elContainer = document.querySelector(selector)
+    elContainer.innerHTML = strHTML
 }
 
 
@@ -81,6 +120,21 @@ function onCellClicked(elCell, i, j) {
     // case mine:  revealAllMines() call gameOver() or gameLife--
     // case empty: expandShown(board, elCell, i, j)
     // case number: revealCell(i, j);
+    var location = {i: i, j: j};
+    const cell = gBoard[i][j];
+
+    if(!cell.isShown && !cell.isMine) {
+        cell.isShown = true;
+        //render dom changes to cell like style?
+        // elCell.toggle('clicked');
+        renderCell(location, cell.minesAroundCount);
+    }
+
+    else if(!cell.isShown && cell.isMine) {
+        cell.isShown = true;
+        //elCell.toggle('clicked');
+        renderCell(location, MINE);
+    }
 }
 
 // this function is called when a cell is right clicked and to be marked

@@ -3,6 +3,32 @@ body {
     font-weight: bold;
 }
 
-.cell-hidden {
-
+.board {
+    width: 400px;
+    height: 400px;
+    margin: 100px auto;
 }
+
+.cell {
+    width: 40px;
+    height: 40px;
+    background-color: gray;
+    text-align: center;
+}
+
+.cell-hidden {
+    background-color: lightgray;
+}
+
+.mine {
+    background-color: red;
+}
+
+.selected {
+    outline: 5px solid orange;
+}
+
+.mark {
+    background-color: lightpink;
+}
+
