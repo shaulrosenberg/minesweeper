@@ -44,17 +44,17 @@ function buildBoard() {
     }
 
     // random mines placement
-    // for (var i = 0; i < gLevel.MINES; i++) {
-    //     var rowIdx = getRandomIntInclusive(0, board.length - 1);
-    //     var colIdx = getRandomIntInclusive(0, board[0].length - 1);
+    for (var i = 0; i < gLevel.MINES; i++) {
+        var rowIdx = getRandomIntInclusive(0, board.length - 1);
+        var colIdx = getRandomIntInclusive(0, board[0].length - 1);
 
-    //     board[rowIdx][colIdx].isMine = true;
-    // }
+        board[rowIdx][colIdx].isMine = true;
+    }
 
-    board[0][1].isMine = true;
-    board[1][2].isMine = true;
-    board[2][3].isMine = true;
-    board[0][3].isMine = true;
+    // board[0][1].isMine = true;
+    // board[1][2].isMine = true;
+    // board[2][3].isMine = true;
+    // board[0][3].isMine = true;
 
     return board;
 }
@@ -98,9 +98,10 @@ function renderBoard(mat, selector) {
             if (cell.isShown) {
                 if (cell.isMine) {
                     cellContent = MINE;
-                    // maybe add class? className += ' mine';
+                    className += ' mine';
                 } else {
                     cellContent = cell.minesAroundCount;
+                    className += ' clicked';
                     if (cell.minesAroundCount === 0) cellContent = EMPTY;
                 }
             }
@@ -109,7 +110,7 @@ function renderBoard(mat, selector) {
             }
             // else cell not visible - > show unclicked cell
             else {
-                className += ' cell-hidden'
+                // className += ' cell-hidden'
             }
 
             strHTML += `<td class="${className}" onclick="onCellClicked(this, ${i}, ${j})" oncontextmenu="onCellMarked(event, this, ${i}, ${j})">${cellContent}</td>`
@@ -133,7 +134,7 @@ function onCellClicked(elCell, i, j) {
     // case empty: expandShown(board, elCell, i, j)
     // case number: revealCell(i, j);
     // startTimer();
-    if(!gGame.isOn) return;
+    if (!gGame.isOn) return;
 
     var location = { i: i, j: j };
     var cell = gBoard[i][j];
@@ -142,6 +143,7 @@ function onCellClicked(elCell, i, j) {
         cell.isShown = true;
         gGame.shownCount++;
         if (cell.minesAroundCount === 0) {
+            // TODO: inside expand remember to keep count of shownCount
             expandShown(gBoard, elCell, i, j);
         }
         //render dom changes to cell like style?
@@ -149,7 +151,6 @@ function onCellClicked(elCell, i, j) {
         // gGame.shownCount++;
         elCell.classList.toggle('clicked');
         renderCell(location, cell.minesAroundCount);
-
         checkGameOver();
     }
 
@@ -159,10 +160,18 @@ function onCellClicked(elCell, i, j) {
         showLives();
         //elCell.toggle('clicked');
         elCell.classList.toggle('mine');
-        revealAllMines(gBoard);
+
         renderCell(location, MINE);
         if (gGame.lives === 0) {
+            revealAllMines(gBoard);
             gameOver();
+            return;
+        } else {
+            // flip mine back if you have lives left
+            setTimeout(function () {
+                cell.isShown = false;
+                renderBoard(gBoard, '.board');
+            }, 2000);
         }
     }
 }
@@ -171,25 +180,32 @@ function onCellClicked(elCell, i, j) {
 function onCellMarked(event, elCell, i, j) {
     event.preventDefault();
 
+    if (!gGame.isOn) return;
     if (gBoard[i][j].isShown) return;
 
     if (gBoard[i][j].isMarked) {
         gBoard[i][j].isMarked = false;
         elCell.innerText = EMPTY;
+        gGame.markedCount--
     }
     else {
         gBoard[i][j].isMarked = true;
         elCell.innerText = FLAG;
+        gGame.markedCount++;
+        checkGameOver();
     }
 }
 
 
 // revealAllMines() - in case we step on a mine and no more lives left
 function revealAllMines(board) {
+    const table = document.querySelector('table');
+
     for (var i = 0; i < board.length; i++) {
         for (var j = 0; j < board[0].length; j++) {
             if (board[i][j].isMine) {
                 renderCell({ i: i, j: j }, MINE);
+                table.querySelector(`.cell-${i}-${j}`).classList.add('mine');
             }
         }
     }
@@ -201,9 +217,9 @@ function expandShown(board, elCell, i, j) {
 }
 
 // when all cells are revealed and all mines are flagged
-function checkGameOver() { 
+function checkGameOver() {
     // maybe count flagged and subtract instead of mines
-    if (gGame.shownCount === (gLevel.SIZE ** 2) - gLevel.MINES) {
+    if (gGame.shownCount === (gLevel.SIZE ** 2) - gGame.markedCount) {
         gameOver();
         onInit();
     }
