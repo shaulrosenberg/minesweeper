@@ -7,7 +7,7 @@ const EMPTY = ' '
 
 var gBoard
 var gGame
-var gLevel
+var gLevel = { SIZE: 4, MINES: 2 }
 var gTimerInterval
 
 
@@ -20,10 +20,7 @@ function onInit() {
         secsPassed: 0,
         lives: 3
     }
-    gLevel = {
-        SIZE: 4,
-        MINES: 4
-    }
+
     gBoard = buildBoard();
     setMinesNegsCount(gBoard);
     renderBoard(gBoard, '.board');
@@ -244,6 +241,12 @@ function showLives() {
     }
 
     elLives.innerText = strHTML;
+}
+
+function onChangeLevel(boardSize, mineCount) {
+    gLevel.SIZE = boardSize;
+    gLevel.MINES = mineCount;
+    onInit();
 }
 
 
