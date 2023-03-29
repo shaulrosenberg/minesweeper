@@ -71,3 +71,20 @@ function getRandomColor() {
     }
     return color
 }
+
+function startTimer() {
+    if(gTimerInterval !== 0) return;
+    
+    var startTime = Date.now()
+    const elTimer = document.querySelector('.timer')
+    gTimerInterval = setInterval(() => {
+        const diff = Date.now() - startTime
+        elTimer.innerText = (diff / 1000).toFixed(3)
+    }, 10)
+}
+
+function restartTimer() {
+    const elTimer = document.querySelector('.timer')
+    elTimer.innerText = '0.000'
+}
+

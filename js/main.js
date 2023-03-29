@@ -1,6 +1,7 @@
 'use strict'
 
 const MINE = '💣'
+const FLAG = '🚩'
 const EMPTY = ' '
 
 
@@ -10,20 +11,23 @@ var gLevel
 var gTimerInterval
 
 
+
 function onInit() {
     gGame = {
-        isOn: false,
+        isOn: true,
         shownCount: 0,
         markedCount: 0,
-        secsPassed: 0
+        secsPassed: 0,
+        lives: 3
     }
     gLevel = {
         SIZE: 4,
-        MINES: 2
+        MINES: 4
     }
     gBoard = buildBoard();
     setMinesNegsCount(gBoard);
     renderBoard(gBoard, '.board');
+    showLives();
 }
 
 // build board - > after placing the mines randomly - > calc the cell contents by counting
@@ -38,6 +42,14 @@ function buildBoard() {
             board[i][j] = createCell(0);
         }
     }
+
+    // random mines placement
+    // for (var i = 0; i < gLevel.MINES; i++) {
+    //     var rowIdx = getRandomIntInclusive(0, board.length - 1);
+    //     var colIdx = getRandomIntInclusive(0, board[0].length - 1);
+
+    //     board[rowIdx][colIdx].isMine = true;
+    // }
 
     board[0][1].isMine = true;
     board[1][2].isMine = true;
@@ -59,9 +71,6 @@ function createCell(aroundCount, isShown = false, isMine = false, isMarked = fal
 }
 
 // count and then set the cell's minesAroundCount
-// if 0 set to EMPTY
-// if mine - > continue
-// for each cell 
 function setMinesNegsCount(board) {
     for (var i = 0; i < board.length; i++) {
         for (var j = 0; j < board[0].length; j++) {
@@ -95,12 +104,15 @@ function renderBoard(mat, selector) {
                     if (cell.minesAroundCount === 0) cellContent = EMPTY;
                 }
             }
+            else if (cell.isMarked) {
+                cellContent = FLAG;
+            }
             // else cell not visible - > show unclicked cell
             else {
                 className += ' cell-hidden'
             }
 
-            strHTML += `<td class="${className}" onclick="onCellClicked(this, ${i}, ${j})">${cellContent}</td>`
+            strHTML += `<td class="${className}" onclick="onCellClicked(this, ${i}, ${j})" oncontextmenu="onCellMarked(event, this, ${i}, ${j})">${cellContent}</td>`
         }
         strHTML += '</tr>'
     }
@@ -120,43 +132,102 @@ function onCellClicked(elCell, i, j) {
     // case mine:  revealAllMines() call gameOver() or gameLife--
     // case empty: expandShown(board, elCell, i, j)
     // case number: revealCell(i, j);
-    var location = {i: i, j: j};
-    const cell = gBoard[i][j];
+    startTimer();
+    var location = { i: i, j: j };
+    var cell = gBoard[i][j];
 
-    if(!cell.isShown && !cell.isMine) {
+    if (!cell.isShown && !cell.isMine) {
         cell.isShown = true;
+        gGame.shownCount++;
+        if (cell.minesAroundCount === 0) {
+            expandShown(gBoard, elCell, i, j);
+        }
         //render dom changes to cell like style?
         // elCell.toggle('clicked');
+        // gGame.shownCount++;
+        elCell.classList.toggle('clicked');
         renderCell(location, cell.minesAroundCount);
+
+        checkGameOver();
     }
 
-    else if(!cell.isShown && cell.isMine) {
+    else if (!cell.isShown && cell.isMine) {
         cell.isShown = true;
+        gGame.lives--;
+        showLives();
         //elCell.toggle('clicked');
+        elCell.classList.toggle('mine');
+        revealAllMines(gBoard);
         renderCell(location, MINE);
+        if (gGame.lives === 0) {
+            gameOver();
+        }
     }
 }
 
 // this function is called when a cell is right clicked and to be marked
 // TODO: hide context-menu when right clicked and mark with flag
-function onCellMarked(elCell) {
+function onCellMarked(event, elCell, i, j) {
+    event.preventDefault();
 
+    if (gBoard[i][j].isShown) return;
+
+    if (gBoard[i][j].isMarked) {
+        gBoard[i][j].isMarked = false;
+        elCell.innerText = EMPTY;
+    }
+    else {
+        gBoard[i][j].isMarked = true;
+        elCell.innerText = FLAG;
+    }
 }
 
 
-// revealAllMines() - in case we step on a mine
+// revealAllMines() - in case we step on a mine and no more lives left
 function revealAllMines(board) {
-
+    for (var i = 0; i < board.length; i++) {
+        for (var j = 0; j < board[0].length; j++) {
+            if (board[i][j].isMine) {
+                renderCell({ i: i, j: j }, MINE);
+            }
+        }
+    }
 }
 
 // this is called when no cell negsCount === 0, reveal all neighboring cells
 function expandShown(board, elCell, i, j) {
-
+    console.log('expand shown called');
 }
 
 // when all cells are revealed and all mines are flagged
 function checkGameOver() {
+    if (gGame.shownCount === (gLevel.SIZE ** 2) - gLevel.MINES) {
+        gameOver();
+        onInit();
+    }
+}
+
+function gameOver() {
+    clearInterval(gTimerInterval);
+    gGame.isOn = false;
+    const elBtn = document.querySelector('.btn-restart');
+    elBtn.innerText = '😎';
+}
+
+function getMineHtml() {
 
 }
+
+function showLives() {
+    const elLives = document.querySelector('.lives');
+    var strHTML = '';
+    for (var i = 0; i < gGame.lives; i++) {
+        strHTML += '💖 ';
+    }
+
+    elLives.innerText = strHTML;
+}
+
+
 
 
