@@ -132,7 +132,9 @@ function onCellClicked(elCell, i, j) {
     // case mine:  revealAllMines() call gameOver() or gameLife--
     // case empty: expandShown(board, elCell, i, j)
     // case number: revealCell(i, j);
-    startTimer();
+    // startTimer();
+    if(!gGame.isOn) return;
+
     var location = { i: i, j: j };
     var cell = gBoard[i][j];
 
@@ -166,7 +168,6 @@ function onCellClicked(elCell, i, j) {
 }
 
 // this function is called when a cell is right clicked and to be marked
-// TODO: hide context-menu when right clicked and mark with flag
 function onCellMarked(event, elCell, i, j) {
     event.preventDefault();
 
@@ -200,7 +201,8 @@ function expandShown(board, elCell, i, j) {
 }
 
 // when all cells are revealed and all mines are flagged
-function checkGameOver() {
+function checkGameOver() { 
+    // maybe count flagged and subtract instead of mines
     if (gGame.shownCount === (gLevel.SIZE ** 2) - gLevel.MINES) {
         gameOver();
         onInit();
