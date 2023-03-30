@@ -37,8 +37,9 @@ function getEmptyLocations(board) {
 
     for (var i = 1; i < board.length; i++) {
         for (var j = 1; j < board[0].length; j++) {
-            // change this incase
-            if (board[i][j] === ' ') {
+            // find another place to put the mine
+            // and re render board
+            if (!board[i][j].isMine) {
                 emptyLocations.push({ i: i, j: j });
             }
         }
@@ -72,19 +73,16 @@ function getRandomColor() {
     return color
 }
 
-function startTimer() {
-    if(gTimerInterval !== 0) return;
-    
-    var startTime = Date.now()
-    const elTimer = document.querySelector('.timer')
-    gTimerInterval = setInterval(() => {
-        const diff = Date.now() - startTime
-        elTimer.innerText = (diff / 1000).toFixed(3)
-    }, 10)
+
+function updateNegs(rowIdx, colIdx) {
+    for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
+        if (i < 0 || i >= gBoard.length) continue;
+        for (var j = colIdx - 1; j <= colIdx + 1; j++) {
+            if (j < 0 || j >= gBoard[0].length) continue;
+            if (i === rowIdx && j === colIdx) continue;
+            gBoard[i][j].minesAroundCount = countMineNegs(i, j);
+        }
+    }
 }
 
-function restartTimer() {
-    const elTimer = document.querySelector('.timer')
-    elTimer.innerText = '0.000'
-}
 

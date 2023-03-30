@@ -1,22 +1,25 @@
 body {
     text-align: center;
     font-weight: bold;
+    font-family: "Lucida Console", "Courier New", monospace;
 }
 
 .wrapper {
     margin: 0px auto;
     width: 500px;
     background-color: antiquewhite;
+    border: 3px solid rgb(255, 152, 153);
 }
 
 .board {
     width: 400px;
-    height: 400px;
     margin: 50px auto;
+    padding: 10px;
     background-color: bisque;
 }
 
 .board table {
+    width: 70%;
     margin: auto;
 }
 
@@ -48,21 +51,30 @@ body {
     margin-top: 50px;
     font-size: 2em;
     border: 3px dashed peachpuff;
+    color: rgb(255, 152, 153);
     display: inline-block;
 }
 
 .score {
     width: 100px;
-    margin-top:50px;
+    margin-top: 50px;
     font-size: 2em;
     border: 3px dashed peachpuff;
+    color: rgb(255, 152, 153);
     display: inline-block;
 }
 
 .btn-restart {
     width: 100px;
-    height: 50px;
-    font-size: 2em;
+    font-size: 1.6em;
+    border: 2px solid rgb(255, 152, 153);
+    border-radius: 5%;
+    background-color: antiquewhite;
+}
+
+.btn-restart:active {
+    background-color: coral;
+    transition: 0.3s;
 }
 
 .lives {
@@ -71,3 +83,11 @@ body {
     font-size: 2em;
 }
 
+.radio-container {
+    width: 50%;
+    margin: auto;
+    margin-top: 25px;
+    padding: 15px;
+    border: 3px dashed peachpuff;
+    color: rgb(255, 167, 166);
+}

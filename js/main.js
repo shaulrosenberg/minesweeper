@@ -7,7 +7,7 @@ const EMPTY = ' '
 
 var gBoard
 var gGame
-var gLevel = { SIZE: 4, MINES: 2 }
+var gLevel = { SIZE: 4, MINES: 2 };
 var gTimerInterval
 
 
@@ -25,6 +25,7 @@ function onInit() {
     setMinesNegsCount(gBoard);
     renderBoard(gBoard, '.board');
     showLives();
+    document.querySelector('.btn-restart').innerText = '😃';
 }
 
 // build board - > after placing the mines randomly - > calc the cell contents by counting
@@ -41,15 +42,15 @@ function buildBoard() {
     }
 
     // random mines placement
-    for (var i = 0; i < gLevel.MINES; i++) {
-        var rowIdx = getRandomIntInclusive(0, board.length - 1);
-        var colIdx = getRandomIntInclusive(0, board[0].length - 1);
+    // for (var i = 0; i < gLevel.MINES; i++) {
+    //     var rowIdx = getRandomIntInclusive(0, board.length - 1);
+    //     var colIdx = getRandomIntInclusive(0, board[0].length - 1);
 
-        board[rowIdx][colIdx].isMine = true;
-    }
+    //     board[rowIdx][colIdx].isMine = true;
+    // }
 
-    // board[0][1].isMine = true;
-    // board[1][2].isMine = true;
+    board[0][1].isMine = true;
+    board[1][2].isMine = true;
     // board[2][3].isMine = true;
     // board[0][3].isMine = true;
 
@@ -61,7 +62,9 @@ function createCell(aroundCount, isShown = false, isMine = false, isMarked = fal
         minesAroundCount: aroundCount,
         isShown: isShown,
         isMine: isMine,
-        isMarked: isMarked
+        isMarked: isMarked,
+        // need this for revealing neighbors
+        isVisited: false
     }
 
     return cell;
@@ -81,6 +84,7 @@ function setMinesNegsCount(board) {
 
 // pseudo : function renderBoard(board, selector) - iterates through and 
 // depending on the content of the Board Model will render either a mine / empty cell / 
+// TODO: add different colors for different negCount
 function renderBoard(mat, selector) {
     var strHTML = '<table border="0"><tbody>'
     for (var i = 0; i < mat.length; i++) {
@@ -136,46 +140,69 @@ function onCellClicked(elCell, i, j) {
     var location = { i: i, j: j };
     var cell = gBoard[i][j];
 
+    // newly discovered cell
     if (!cell.isShown && !cell.isMine) {
+        cell.isVisited = true;
         cell.isShown = true;
         gGame.shownCount++;
+        if (isFirstClick(gBoard)) {
+            startTimer();
+        }
         if (cell.minesAroundCount === 0) {
             // TODO: inside expand remember to keep count of shownCount
             expandShown(gBoard, elCell, i, j);
         }
-        //render dom changes to cell like style?
-        // elCell.toggle('clicked');
-        // gGame.shownCount++;
-        elCell.classList.toggle('clicked');
-        renderCell(location, cell.minesAroundCount);
+        else {
+            elCell.classList.toggle('clicked');
+            renderCell(location, cell.minesAroundCount);
+        }
+
         checkGameOver();
     }
 
+    // newly discovered mine
     else if (!cell.isShown && cell.isMine) {
+        if (isFirstClick(gBoard)) {
+            // if first click is a mine, swap it to some other empty location
+            // and do the above instead
+            var locations = getEmptyLocations(gBoard);
+            var newMineLocation = locations[getRandomIntInclusive(0, locations.length - 1)];
+            // update MODEL - TODO: also need to recount negs for all neighbors of new mine location and curr location after swap!!
+            gBoard[newMineLocation.i][newMineLocation.j].isMine = true;
+            gBoard[newMineLocation.i][newMineLocation.j].minesAroundCount = 0;
+            // updateNegs(newMineLocation.i, newMineLocation.j);
+            gBoard[i][j].isMine = false;
+            gBoard[i][j].minesAroundCount = countMineNegs(i, j);
+            // updateNegs(i, j);
+            setMinesNegsCount(gBoard);
+            // call clickedCell Again with same position but different content
+            onCellClicked(elCell, i, j);
+            return;
+        }
         cell.isShown = true;
+        cell.isVisited = true;
         gGame.lives--;
         showLives();
-        //elCell.toggle('clicked');
         elCell.classList.toggle('mine');
 
         renderCell(location, MINE);
         if (gGame.lives === 0) {
             revealAllMines(gBoard);
-            gameOver();
+            gameOver('☠');
             return;
-        } else {
+        } else if (gGame.lives > 0) {
             // flip mine back if you have lives left
             setTimeout(function () {
                 cell.isShown = false;
                 renderBoard(gBoard, '.board');
-            }, 2000);
+            }, 2000, cell);
         }
     }
 }
 
 // this function is called when a cell is right clicked and to be marked
-function onCellMarked(event, elCell, i, j) {
-    event.preventDefault();
+function onCellMarked(e, elCell, i, j) {
+    e.preventDefault();
 
     if (!gGame.isOn) return;
     if (gBoard[i][j].isShown) return;
@@ -210,23 +237,33 @@ function revealAllMines(board) {
 
 // this is called when no cell negsCount === 0, reveal all neighboring cells
 function expandShown(board, elCell, i, j) {
-    console.log('expand shown called');
+    for (var k = i - 1; k <= i + 1; k++) {
+        if (k >= board.length || k < 0) continue;
+        for (var m = j - 1; m <= j + 1; m++) {
+            if (m === j && k === i) continue;
+            if (m < 0 || m >= board[0].length) continue;
+            if (!board[k][m].isVisited) gGame.shownCount++;
+            board[k][m].isShown = true;
+            board[k][m].isVisited = true;
+        }
+    }
+    renderBoard(gBoard, '.board');
 }
 
 // when all cells are revealed and all mines are flagged
 function checkGameOver() {
-    // maybe count flagged and subtract instead of mines
+    // TODO: add condition to fix (marked === showncount)
     if (gGame.shownCount === (gLevel.SIZE ** 2) - gGame.markedCount) {
-        gameOver();
+        gameOver('😎');
         onInit();
     }
 }
 
-function gameOver() {
+function gameOver(msg) {
     clearInterval(gTimerInterval);
     gGame.isOn = false;
     const elBtn = document.querySelector('.btn-restart');
-    elBtn.innerText = '😎';
+    elBtn.innerText = msg;
 }
 
 function getMineHtml() {
@@ -248,6 +285,44 @@ function onChangeLevel(boardSize, mineCount) {
     gLevel.MINES = mineCount;
     onInit();
 }
+
+function isFirstClick(board) {
+    for (var i = 0; i < board.length; i++) {
+        for (var j = 0; j < board[0].length; j++) {
+            if (board[i][j].isShown) return false;
+        }
+    }
+
+    return true;
+}
+
+
+
+function updateScore() {
+    const elScore = document.querySelector('.score');
+    // score is essentially counting the number of clicks required to reveal all non-mine squares.
+    // on mine clicks ++
+    // on non mine clicks ++
+    // update score after: clicking a mine, clicking a non mine
+}
+
+
+function startTimer() {
+    //if(gTimerInterval !== 0) return;
+    console.log('entered');
+    var startTime = Date.now()
+    const elTimer = document.querySelector('.timer')
+    gTimerInterval = setInterval(() => {
+        const diff = Date.now() - startTime
+        elTimer.innerText = Math.floor(diff / 1000);
+    }, 500, elTimer);
+}
+
+function restartTimer() {
+    const elTimer = document.querySelector('.timer')
+    elTimer.innerText = '0'
+}
+
 
 
 

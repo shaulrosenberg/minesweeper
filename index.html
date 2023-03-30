@@ -16,10 +16,11 @@
         <button class="btn-restart" onclick="onInit()">😃</button>
         <div class="timer">0.000</div>
 
-        <div class="level-btns-container">
-            <button class="level-btn" onclick="onChangeLevel(4, 2)">Beginner (4x4)</button>
-            <button class="level-btn" onclick="onChangeLevel(8, 14)">Medium (8x8)</button>
-            <button class="level-btn" onclick="onChangeLevel(12, 32)">Expert (12x12)</button>
+        <div class="radio-container">
+            <h3>Choose difficulty</h3>
+            <label><input type="radio" name="difficulty" onclick="onChangeLevel(4, 2)"/>Easy</label>   
+            <label><input type="radio" name="difficulty" onclick="onChangeLevel(8, 14)"/>Medium</label> 
+            <label><input type="radio" name="difficulty" onclick="onChangeLevel(12, 32)"/>Hard</label>  
         </div>
 
         <div class="board">
