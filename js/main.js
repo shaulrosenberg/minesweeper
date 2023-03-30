@@ -207,8 +207,8 @@ function onCellClicked(elCell, i, j) {
             onCellClicked(elCell, i, j);
             return;
         }
+        
         cell.isShown = true;
-        // cell.isVisited = true;
         gGame.lives--;
         updateScore();
         showLives();
