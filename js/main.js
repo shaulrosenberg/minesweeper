@@ -336,7 +336,15 @@ function isFirstClick(board) {
 function updateScore() {
     const elScore = document.querySelector('.score');
     const elBestScore = document.querySelector('.best-score');
-    elBestScore.innerHTML = `Best Score: <br> ${gGame.bestScore}`;
+    if(gGame.bestScore === null) {
+        gGame.bestScore = Infinity;
+        elBestScore.innerHTML = `Best Score: <br> No Score Yet...`;
+    }
+
+    else if(gGame.bestScore < Infinity) {
+        elBestScore.innerHTML = `Best Score: <br> ${gGame.bestScore}`;
+    }
+    
     elScore.innerText = gGame.clicks;
 }
 

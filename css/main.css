@@ -107,5 +107,15 @@ body {
 }
 
 .best-score {
-    color:rgb(190, 101, 101);
+    color: rgb(190, 101, 101);
+}
+
+footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: rgb(190, 101, 101);
+    color: white;
+    text-align: center;
 }
