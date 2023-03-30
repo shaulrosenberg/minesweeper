@@ -15,6 +15,7 @@ body {
     width: 400px;
     margin: 50px auto;
     padding: 10px;
+    border-radius: 5%;
     background-color: bisque;
 }
 
@@ -26,7 +27,7 @@ body {
 .cell {
     width: 40px;
     height: 40px;
-    background-color: lightgray;
+    background-color: rgb(246, 181, 181);
     text-align: center;
 }
 
@@ -39,7 +40,11 @@ body {
 }
 
 .clicked {
-    background-color: darkgray;
+    background-color: rgb(190, 101, 101);
+}
+
+.selected {
+    outline: 5px solid orange;
 }
 
 .mark {
@@ -90,4 +95,17 @@ body {
     padding: 15px;
     border: 3px dashed peachpuff;
     color: rgb(255, 167, 166);
+}
+
+.safe-click button {
+    width: 100px;
+    height: 50px;
+    font-weight: bold;
+    border: 3px solid rgb(255, 152, 153);
+    background-color: rgb(255, 167, 166);
+    border-radius: 5%;
+}
+
+.best-score {
+    color:rgb(190, 101, 101);
 }

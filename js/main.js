@@ -19,7 +19,9 @@ function onInit() {
         markedCount: 0,
         secsPassed: 0,
         lives: 3,
-        clicks: 0
+        clicks: 0,
+        safeClicksCount: 3,
+        bestScore: localStorage.getItem('score')
     }
     clearInterval(gTimerInterval);
     gTimerInterval = 0;
@@ -28,6 +30,7 @@ function onInit() {
     renderBoard(gBoard, '.board');
     showLives();
     updateScore();
+    renderSafeClicks();
     restartTimer();
     document.querySelector('.btn-restart').innerText = '😃';
 }
@@ -53,6 +56,7 @@ function buildBoard() {
         board[rowIdx][colIdx].isMine = true;
     }
 
+    // testing purposes
     // board[0][1].isMine = true;
     // board[1][2].isMine = true;
     // board[2][3].isMine = true;
@@ -81,7 +85,6 @@ function setMinesNegsCount(board) {
             const cell = board[i][j];
             if (cell.isMine) continue;
             cell.minesAroundCount = countMineNegs(i, j);
-            console.log(cell.minesAroundCount);
         }
     }
 }
@@ -195,7 +198,6 @@ function onCellClicked(elCell, i, j) {
         if (gGame.lives === 0) {
             revealAllMines(gBoard);
             gameOver('☠');
-            return;
         } else if (gGame.lives > 0) {
             // flip mine back if you have lives left
             setTimeout(function () {
@@ -260,7 +262,10 @@ function expandShown(board, elCell, i, j) {
 function checkGameOver() {
     // TODO: add condition to fix (marked === showncount)
     if (gGame.shownCount === (gLevel.SIZE ** 2) - gGame.markedCount &&
-        (gGame.markedCount !== gLevel.SIZE ** 2)) {
+        (gGame.markedCount === gLevel.MINES)) {
+        if (gGame.clicks < gGame.bestScore) {
+            localStorage.setItem('score', gGame.clicks);
+        }
 
         gameOver('😎');
         setTimeout(onInit, 2000);
@@ -274,9 +279,6 @@ function gameOver(msg) {
     elBtn.innerText = msg;
 }
 
-function getMineHtml() {
-
-}
 
 function showLives() {
     const elLives = document.querySelector('.lives');
@@ -286,6 +288,33 @@ function showLives() {
     }
 
     elLives.innerText = strHTML;
+}
+
+function onSafeClick() {
+    if (gGame.safeClicksCount === 0 || !gGame.isOn) return;
+
+    var i = getRandomIntInclusive(0, gBoard.length - 1);
+    var j = getRandomIntInclusive(0, gBoard[0].length - 1);
+
+    if (gBoard[i][j].isMine || gBoard[i][j].isShown) {
+        onSafeClick();
+        return;
+    }
+
+    const elCell = document.querySelector(`.cell-${i}-${j}`);
+    elCell.classList.toggle('selected');
+
+    gGame.safeClicksCount--;
+    renderSafeClicks();
+
+    setTimeout(function () {
+        elCell.classList.toggle('selected');
+    }, 2000, elCell);
+}
+
+function renderSafeClicks() {
+    const elSafeCount = document.querySelector('.safe-click h6');
+    elSafeCount.innerText = `${gGame.safeClicksCount} clicks available`;
 }
 
 function onChangeLevel(boardSize, mineCount) {
@@ -304,17 +333,14 @@ function isFirstClick(board) {
     return true;
 }
 
-
-
 function updateScore() {
     const elScore = document.querySelector('.score');
+    const elBestScore = document.querySelector('.best-score');
+    elBestScore.innerHTML = `Best Score: <br> ${gGame.bestScore}`;
     elScore.innerText = gGame.clicks;
 }
 
-
 function startTimer() {
-    //if(gTimerInterval !== 0) return;
-    console.log('entered');
     var startTime = Date.now()
     const elTimer = document.querySelector('.timer')
     gTimerInterval = setInterval(() => {
