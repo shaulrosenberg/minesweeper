@@ -79,7 +79,7 @@ function updateNegs(rowIdx, colIdx, state) {
         if (i < 0 || i >= gBoard.length) continue;
         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
             if (j < 0 || j >= gBoard[0].length) continue;
-            if (i === rowIdx && j === colIdx) continue;
+            // if (i === rowIdx && j === colIdx) continue;
             gBoard[i][j].isShown = state;
         }
     }

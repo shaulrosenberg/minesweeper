@@ -188,6 +188,10 @@ function onCellClicked(elCell, i, j) {
 
     // newly discovered mine
     else if (!cell.isShown && cell.isMine) {
+        if (gHintsEnabled) {
+            handleHint(i, j);
+            return;
+        }
         if (isFirstClick(gBoard)) {
             // if first click is a mine, swap it to random non-mine location
             var locations = getEmptyLocations(gBoard);
