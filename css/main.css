@@ -88,6 +88,12 @@ body {
     font-size: 2em;
 }
 
+.hints {
+    width: 200px;
+    margin: auto;
+    font-size: 2em;
+}
+
 .radio-container {
     width: 50%;
     margin: auto;

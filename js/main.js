@@ -1,5 +1,10 @@
 'use strict'
 
+/*******************************************************************************
+ * Author:  Shaul Rosenberg
+ * Version: 1.1
+ ******************************************************************************/
+
 const MINE = '💣'
 const FLAG = '🚩'
 const EMPTY = ' '
@@ -9,6 +14,7 @@ var gBoard
 var gGame
 var gLevel = { SIZE: 4, MINES: 2 };
 var gTimerInterval
+var gHintsEnabled
 
 
 
@@ -21,8 +27,10 @@ function onInit() {
         lives: 3,
         clicks: 0,
         safeClicksCount: 3,
-        bestScore: localStorage.getItem('score')
+        bestScore: localStorage.getItem('score'),
+        hints: 3
     }
+    gHintsEnabled = false;
     clearInterval(gTimerInterval);
     gTimerInterval = 0;
     gBoard = buildBoard();
@@ -31,6 +39,7 @@ function onInit() {
     showLives();
     updateScore();
     renderSafeClicks();
+    renderHints();
     restartTimer();
     document.querySelector('.btn-restart').innerText = '😃';
 }
@@ -89,6 +98,8 @@ function setMinesNegsCount(board) {
     }
 }
 
+/******************************************************************************/
+
 // pseudo: depending on the content of the Board Model will render either a mine / empty cell / 
 // TODO: add different colors for different negCount
 function renderBoard(mat, selector) {
@@ -130,6 +141,7 @@ function renderBoard(mat, selector) {
     elContainer.innerHTML = strHTML
 }
 
+/******************************************************************************/
 
 // pseudo : revealCell(this)
 // onClick one of the cells will reveal the contents on the current cell
@@ -151,6 +163,10 @@ function onCellClicked(elCell, i, j) {
     if (!cell.isShown && !cell.isMine) {
         if (isFirstClick(gBoard)) {
             startTimer();
+        }
+        if (gHintsEnabled) {
+            handleHint(i, j);
+            return;
         }
         // update cell state and gGame.shownCount
         if (cell.minesAroundCount === 0) {
@@ -208,6 +224,8 @@ function onCellClicked(elCell, i, j) {
     }
 }
 
+/******************************************************************************/
+
 // this function is called when a cell is right clicked and to be marked
 function onCellMarked(e, elCell, i, j) {
     e.preventDefault();
@@ -228,6 +246,7 @@ function onCellMarked(e, elCell, i, j) {
     }
 }
 
+/******************************************************************************/
 
 // revealAllMines() - in case we step on a mine and no more lives left
 function revealAllMines(board) {
@@ -243,7 +262,10 @@ function revealAllMines(board) {
     }
 }
 
+/******************************************************************************/
+
 // this is called when no cell negsCount === 0, reveal all neighboring cells
+// using floodFill instead
 function expandShown(board, elCell, i, j) {
     for (var k = i - 1; k <= i + 1; k++) {
         if (k >= board.length || k < 0) continue;
@@ -257,6 +279,8 @@ function expandShown(board, elCell, i, j) {
     }
     renderBoard(gBoard, '.board');
 }
+
+/******************************************************************************/
 
 // when all cells are revealed and all mines are flagged
 function checkGameOver() {
@@ -279,6 +303,7 @@ function gameOver(msg) {
     elBtn.innerText = msg;
 }
 
+/******************************************************************************/
 
 function showLives() {
     const elLives = document.querySelector('.lives');
@@ -289,6 +314,8 @@ function showLives() {
 
     elLives.innerText = strHTML;
 }
+
+/******************************************************************************/
 
 function onSafeClick() {
     if (gGame.safeClicksCount === 0 || !gGame.isOn) return;
@@ -317,11 +344,15 @@ function renderSafeClicks() {
     elSafeCount.innerText = `${gGame.safeClicksCount} clicks available`;
 }
 
+/******************************************************************************/
+
 function onChangeLevel(boardSize, mineCount) {
     gLevel.SIZE = boardSize;
     gLevel.MINES = mineCount;
     onInit();
 }
+
+/******************************************************************************/
 
 function isFirstClick(board) {
     for (var i = 0; i < board.length; i++) {
@@ -333,28 +364,63 @@ function isFirstClick(board) {
     return true;
 }
 
+/******************************************************************************/
+
+function renderHints() {
+    var elHints = document.querySelector('.hints');
+    var strHTML = '';
+    for (var i = 0; i < gGame.hints; i++) {
+        strHTML += `<span onclick="onHint(this)">💡 </span>`;
+    }
+
+    elHints.innerHTML = strHTML;
+}
+
+function onHint(elHint) {
+    if (!gGame.isOn || gGame.hints === 0) return;
+    gGame.hints--;
+    elHint.style.backgroundColor = 'yellow';
+    gHintsEnabled = true;
+}
+
+function handleHint(i, j) {
+    // show cell and neighbors for 1 second and then hide them
+    updateNegs(i, j, true)
+    setTimeout(function () {
+        updateNegs(i, j, false);
+    }, 1000, i, j);
+    gHintsEnabled = false;
+    renderHints();
+}
+
+/******************************************************************************/
+
 function updateScore() {
     const elScore = document.querySelector('.score');
     const elBestScore = document.querySelector('.best-score');
-    if(gGame.bestScore === null) {
+    if (gGame.bestScore === null) {
         gGame.bestScore = Infinity;
         elBestScore.innerHTML = `Best Score: <br> No Score Yet...`;
     }
 
-    else if(gGame.bestScore < Infinity) {
+    else if (gGame.bestScore < Infinity) {
         elBestScore.innerHTML = `Best Score: <br> ${gGame.bestScore}`;
     }
-    
+
     elScore.innerText = gGame.clicks;
 }
 
+/******************************************************************************/
+
 function startTimer() {
+    // don't start the timer again if a game is already in progress
+    if(gTimerInterval) return;
     var startTime = Date.now()
     const elTimer = document.querySelector('.timer')
     gTimerInterval = setInterval(() => {
-        const diff = Date.now() - startTime
-        elTimer.innerText = Math.floor(diff / 1000);
-    }, 500, elTimer);
+        gGame.secsPassed = Date.now() - startTime
+        elTimer.innerText = Math.floor(gGame.secsPassed / 1000);
+    }, 1000, elTimer);
 }
 
 function restartTimer() {
@@ -362,6 +428,7 @@ function restartTimer() {
     elTimer.innerText = '0'
 }
 
+/******************************************************************************/
 
 // i did not invent this algorithm 🤣 - only adapted it to my game 
 function floodFill(board, i, j) {

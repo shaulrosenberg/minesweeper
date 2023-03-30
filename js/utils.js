@@ -74,15 +74,16 @@ function getRandomColor() {
 }
 
 
-// function updateNegs(rowIdx, colIdx) {
-//     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
-//         if (i < 0 || i >= gBoard.length) continue;
-//         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
-//             if (j < 0 || j >= gBoard[0].length) continue;
-//             if (i === rowIdx && j === colIdx) continue;
-//             gBoard[i][j].minesAroundCount = countMineNegs(i, j);
-//         }
-//     }
-// }
+function updateNegs(rowIdx, colIdx, state) {
+    for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
+        if (i < 0 || i >= gBoard.length) continue;
+        for (var j = colIdx - 1; j <= colIdx + 1; j++) {
+            if (j < 0 || j >= gBoard[0].length) continue;
+            if (i === rowIdx && j === colIdx) continue;
+            gBoard[i][j].isShown = state;
+        }
+    }
+    renderBoard(gBoard, '.board');
+}
 
 
