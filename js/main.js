@@ -18,13 +18,17 @@ function onInit() {
         shownCount: 0,
         markedCount: 0,
         secsPassed: 0,
-        lives: 3
+        lives: 3,
+        clicks: 0
     }
-
+    clearInterval(gTimerInterval);
+    gTimerInterval = 0;
     gBoard = buildBoard();
     setMinesNegsCount(gBoard);
     renderBoard(gBoard, '.board');
     showLives();
+    updateScore();
+    restartTimer();
     document.querySelector('.btn-restart').innerText = '😃';
 }
 
@@ -42,15 +46,15 @@ function buildBoard() {
     }
 
     // random mines placement
-    // for (var i = 0; i < gLevel.MINES; i++) {
-    //     var rowIdx = getRandomIntInclusive(0, board.length - 1);
-    //     var colIdx = getRandomIntInclusive(0, board[0].length - 1);
+    for (var i = 0; i < gLevel.MINES; i++) {
+        var rowIdx = getRandomIntInclusive(0, board.length - 1);
+        var colIdx = getRandomIntInclusive(0, board[0].length - 1);
 
-    //     board[rowIdx][colIdx].isMine = true;
-    // }
+        board[rowIdx][colIdx].isMine = true;
+    }
 
-    board[0][1].isMine = true;
-    board[1][2].isMine = true;
+    // board[0][1].isMine = true;
+    // board[1][2].isMine = true;
     // board[2][3].isMine = true;
     // board[0][3].isMine = true;
 
@@ -63,7 +67,7 @@ function createCell(aroundCount, isShown = false, isMine = false, isMarked = fal
         isShown: isShown,
         isMine: isMine,
         isMarked: isMarked,
-        // need this for revealing neighbors
+        // need this for revealing neighbors with recursion
         isVisited: false
     }
 
@@ -82,8 +86,7 @@ function setMinesNegsCount(board) {
     }
 }
 
-// pseudo : function renderBoard(board, selector) - iterates through and 
-// depending on the content of the Board Model will render either a mine / empty cell / 
+// pseudo: depending on the content of the Board Model will render either a mine / empty cell / 
 // TODO: add different colors for different negCount
 function renderBoard(mat, selector) {
     var strHTML = '<table border="0"><tbody>'
@@ -127,61 +130,64 @@ function renderBoard(mat, selector) {
 
 // pseudo : revealCell(this)
 // onClick one of the cells will reveal the contents on the current cell
-// handle the different outcomes - mine ? empty ? a cell with a neighboring mine?
+// handle the different outcomes - mine / empty / 0 > negCount
 // revealCell(i, j) - called when cellClicked(this, i, j) happens
 function onCellClicked(elCell, i, j) {
     // const cell = gBoard[i][j]
     // case mine:  revealAllMines() call gameOver() or gameLife--
     // case empty: expandShown(board, elCell, i, j)
     // case number: revealCell(i, j);
-    // startTimer();
+    // startTimer() if first click;
     if (!gGame.isOn) return;
+    gGame.clicks++;
 
     var location = { i: i, j: j };
     var cell = gBoard[i][j];
 
     // newly discovered cell
     if (!cell.isShown && !cell.isMine) {
-        cell.isVisited = true;
-        cell.isShown = true;
-        gGame.shownCount++;
         if (isFirstClick(gBoard)) {
             startTimer();
         }
+        // update cell state and gGame.shownCount
         if (cell.minesAroundCount === 0) {
-            // TODO: inside expand remember to keep count of shownCount
-            expandShown(gBoard, elCell, i, j);
+            //  expandShown(gBoard, elCell, i, j);
+            floodFill(gBoard, i, j);
+            renderBoard(gBoard, '.board');
         }
         else {
+            cell.isVisited = true;
+            cell.isShown = true;
+            gGame.shownCount++;
             elCell.classList.toggle('clicked');
             renderCell(location, cell.minesAroundCount);
         }
 
+        updateScore();
         checkGameOver();
     }
 
     // newly discovered mine
     else if (!cell.isShown && cell.isMine) {
         if (isFirstClick(gBoard)) {
-            // if first click is a mine, swap it to some other empty location
-            // and do the above instead
+            // if first click is a mine, swap it to random non-mine location
             var locations = getEmptyLocations(gBoard);
             var newMineLocation = locations[getRandomIntInclusive(0, locations.length - 1)];
-            // update MODEL - TODO: also need to recount negs for all neighbors of new mine location and curr location after swap!!
+            // update MODEL
             gBoard[newMineLocation.i][newMineLocation.j].isMine = true;
             gBoard[newMineLocation.i][newMineLocation.j].minesAroundCount = 0;
-            // updateNegs(newMineLocation.i, newMineLocation.j);
             gBoard[i][j].isMine = false;
             gBoard[i][j].minesAroundCount = countMineNegs(i, j);
-            // updateNegs(i, j);
+            // update negs for board after mine swap
             setMinesNegsCount(gBoard);
             // call clickedCell Again with same position but different content
             onCellClicked(elCell, i, j);
             return;
         }
         cell.isShown = true;
-        cell.isVisited = true;
+        // cell.isVisited = true;
         gGame.lives--;
+        updateScore();
         showLives();
         elCell.classList.toggle('mine');
 
@@ -253,9 +259,11 @@ function expandShown(board, elCell, i, j) {
 // when all cells are revealed and all mines are flagged
 function checkGameOver() {
     // TODO: add condition to fix (marked === showncount)
-    if (gGame.shownCount === (gLevel.SIZE ** 2) - gGame.markedCount) {
+    if (gGame.shownCount === (gLevel.SIZE ** 2) - gGame.markedCount &&
+        (gGame.markedCount !== gLevel.SIZE ** 2)) {
+
         gameOver('😎');
-        onInit();
+        setTimeout(onInit, 2000);
     }
 }
 
@@ -300,10 +308,7 @@ function isFirstClick(board) {
 
 function updateScore() {
     const elScore = document.querySelector('.score');
-    // score is essentially counting the number of clicks required to reveal all non-mine squares.
-    // on mine clicks ++
-    // on non mine clicks ++
-    // update score after: clicking a mine, clicking a non mine
+    elScore.innerText = gGame.clicks;
 }
 
 
@@ -324,6 +329,29 @@ function restartTimer() {
 }
 
 
+// i did not invent this algorithm 🤣 - only adapted it to my game 
+function floodFill(board, i, j) {
+    if (i < 0 || i >= board.length || j < 0 || j >= board[0].length ||
+        board[i][j].isVisited || board[i][j].isMine) {
+        return;
+    }
 
+    // on the edges
+    if (board[i][j].minesAroundCount > 0) {
+        board[i][j].isVisited = true;
+        board[i][j].isShown = true;
+        gGame.shownCount++;
+        return;
+    }
 
+    // visit cell
+    board[i][j].isVisited = true;
+    board[i][j].isShown = true;
+    gGame.shownCount++;
 
+    // recursively flood fill in all neighboring cells
+    floodFill(board, i - 1, j);
+    floodFill(board, i + 1, j);
+    floodFill(board, i, j - 1);
+    floodFill(board, i, j + 1);
+}
