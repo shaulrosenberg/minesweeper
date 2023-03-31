@@ -161,6 +161,7 @@ function onCellClicked(elCell, i, j) {
 
     // newly discovered cell
     if (!cell.isShown && !cell.isMine) {
+        if (gBoard[i][j].isMarked) return;
         if (isFirstClick(gBoard)) {
             startTimer();
         }
@@ -188,6 +189,7 @@ function onCellClicked(elCell, i, j) {
 
     // newly discovered mine
     else if (!cell.isShown && cell.isMine) {
+        if (gBoard[i][j].isMarked) return;
         if (gHintsEnabled) {
             handleHint(i, j);
             return;
@@ -207,24 +209,26 @@ function onCellClicked(elCell, i, j) {
             onCellClicked(elCell, i, j);
             return;
         }
-        
+
         cell.isShown = true;
+        gGame.shownCount++;
         gGame.lives--;
         updateScore();
         showLives();
         elCell.classList.toggle('mine');
-
         renderCell(location, MINE);
+
         if (gGame.lives === 0) {
             revealAllMines(gBoard);
             gameOver('☠');
-        } else if (gGame.lives > 0) {
-            // flip mine back if you have lives left
-            setTimeout(function () {
-                cell.isShown = false;
-                renderBoard(gBoard, '.board');
-            }, 2000, cell);
         }
+        // else if (gGame.lives > 0) {
+        //     // flip mine back if you have lives left
+        //     setTimeout(function () {
+        //         cell.isShown = false;
+        //         renderBoard(gBoard, '.board');
+        //     }, 2000, cell);
+        // }
     }
 }
 
@@ -233,21 +237,32 @@ function onCellClicked(elCell, i, j) {
 // this function is called when a cell is right clicked and to be marked
 function onCellMarked(e, elCell, i, j) {
     e.preventDefault();
-
     if (!gGame.isOn) return;
-    if (gBoard[i][j].isShown) return;
+    var cell = gBoard[i][j];
 
-    if (gBoard[i][j].isMarked) {
-        gBoard[i][j].isMarked = false;
+    if (cell.isShown && !cell.isMine) return;
+
+    if (cell.isMarked) {
+        cell.isMarked = false;
         elCell.innerText = EMPTY;
         gGame.markedCount--
     }
-    else {
-        gBoard[i][j].isMarked = true;
+    // case we already flipped a mine and he is shown we flag it and make it unshown
+    // we enable re clicking the mine if we remove the mark by setting isShown to false
+    else if (cell.isShown && cell.isMine && !cell.isMarked) {
+        cell.isMarked = true;
+        cell.isShown = false;
+        gGame.shownCount--;
+        elCell.innerText = FLAG;
+        elCell.classList.remove('mine');
+        gGame.markedCount++;
+    } else {
+        cell.isMarked = true;
         elCell.innerText = FLAG;
         gGame.markedCount++;
-        checkGameOver();
     }
+
+    checkGameOver();
 }
 
 /******************************************************************************/
@@ -374,7 +389,7 @@ function renderHints() {
     var elHints = document.querySelector('.hints');
     var strHTML = '';
     for (var i = 0; i < gGame.hints; i++) {
-        strHTML += `<span onclick="onHint(this)">💡 </span>`;
+        strHTML += `<span onclick="onHint(this)" style="cursor: pointer">💡 </span>`;
     }
 
     elHints.innerHTML = strHTML;
@@ -387,6 +402,7 @@ function onHint(elHint) {
     gHintsEnabled = true;
 }
 
+// TODO: Fix shownCount after handleHint and isShown
 function handleHint(i, j) {
     // show cell and neighbors for 1 second and then hide them
     updateNegs(i, j, true)
@@ -409,6 +425,7 @@ function updateScore() {
 
     else if (gGame.bestScore < Infinity) {
         elBestScore.innerHTML = `Best Score: <br> ${gGame.bestScore}`;
+        // localStorage.set('score', gGame.bestScore)
     }
 
     elScore.innerText = gGame.clicks;
@@ -418,7 +435,7 @@ function updateScore() {
 
 function startTimer() {
     // don't start the timer again if a game is already in progress
-    if(gTimerInterval) return;
+    if (gTimerInterval) return;
     var startTime = Date.now()
     const elTimer = document.querySelector('.timer')
     gTimerInterval = setInterval(() => {
