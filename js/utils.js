@@ -53,12 +53,12 @@ function countMineNegs(board, rowIdx, colIdx) {
     var count = 0;
 
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
-        if(i >= board.length || i < 0 ) continue;
+        if (i >= board.length || i < 0) continue;
         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
             if (i === rowIdx && j === colIdx) continue;
-            if(j >= board[0].length || j < 0) continue;
+            if (j >= board[0].length || j < 0) continue;
             var cell = board[i][j];
-            if(cell.isMine) count++;
+            if (cell.isMine) count++;
         }
     }
 
@@ -76,14 +76,15 @@ function getRandomColor() {
 
 
 function updateNegs(rowIdx, colIdx, state) {
+    
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
         if (i < 0 || i >= gBoard.length) continue;
         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
             if (j < 0 || j >= gBoard[0].length) continue;
-            // if (i === rowIdx && j === colIdx) continue;
             gBoard[i][j].isShown = state;
         }
     }
+
     renderBoard(gBoard, '.board');
 }
 

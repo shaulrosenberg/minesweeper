@@ -130,12 +130,28 @@ body {
     border-radius: 5%;
 }
 
+.exterminator button {
+    width: 100px;
+    height: 50px;
+    font-weight: bold;
+    border: 3px solid rgb(255, 152, 153);
+    background-color: rgb(255, 167, 166);
+    border-radius: 5%;
+}
+
 .undo {
     display: inline-block;
+    padding-bottom: 10px;
 }
 
 .mega-hint {
     display: inline-block;
+    padding-bottom: 10px;
+}
+
+.exterminator {
+    display: inline-block;
+    padding-bottom: 10px;
 }
 
 .best-score {

@@ -15,6 +15,7 @@ var gGame
 var gLevel = { SIZE: 4, MINES: 2 };
 var gTimerInterval
 var gHintsEnabled
+var gMegaHintEnabled
 var gBoardStates
 
 
@@ -147,7 +148,7 @@ function renderBoard(mat, selector) {
 /******************************************************************************/
 
 function onCellClicked(elCell, i, j) {
-    
+
     if (!gGame.isOn) return;
     gGame.clicks++;
 
@@ -295,13 +296,11 @@ function expandShown(board, elCell, i, j) {
 
 // when all cells are revealed and all mines are flagged
 function checkGameOver() {
-    // TODO: add condition to fix (marked === showncount)
     if (gGame.shownCount === (gLevel.SIZE ** 2) - gGame.markedCount &&
-        (gGame.markedCount === gLevel.MINES)) {
+        (gGame.markedCount === getMinesCount(gBoard)) || (gGame.shownCount === gLevel.SIZE ** 2 && getMinesCount(gBoard) === 0)) {
         if (gGame.clicks < gGame.bestScore) {
             localStorage.setItem('score', gGame.clicks);
         }
-
         gameOver('😎');
         setTimeout(onInit, 2000);
     }
@@ -312,6 +311,18 @@ function gameOver(msg) {
     gGame.isOn = false;
     const elBtn = document.querySelector('.btn-restart');
     elBtn.innerText = msg;
+}
+
+function getMinesCount(board) {
+    var count = 0;
+    for (var i = 0; i < board.length; i++) {
+        for (var j = 0; j < board[0].length; j++) {
+            var cell = board[i][j];
+            if(cell.isMine) count++;
+        }
+    }
+
+    return count;
 }
 
 /******************************************************************************/
@@ -388,9 +399,12 @@ function renderHints() {
 }
 
 function onHint(elHint) {
-    if (!gGame.isOn || gGame.hints === 0) return;
+    if (!gGame.isOn || gGame.hints === 0 || gHintsEnabled) return;
     gGame.hints--;
     elHint.style.backgroundColor = 'yellow';
+    elHint.style.display = 'inline-block';
+    elHint.style.width = '50px';
+    elHint.style.width = '30px';
     gHintsEnabled = true;
 }
 
@@ -403,6 +417,37 @@ function handleHint(i, j) {
     }, 1000, i, j);
     gHintsEnabled = false;
     renderHints();
+}
+
+function onMegaHint() {
+
+}
+
+function onExterminate() {
+    var minesCoords = [];
+    var minesToDestroy = 3;
+
+    for (var i = 0; i < gBoard.length; i++) {
+        for (var j = 0; j < gBoard[0].length; j++) {
+            var cell = gBoard[i][j];
+            var coord = { i: i, j: j }
+            if (cell.isMine) minesCoords.push(coord);
+        }
+    }
+
+    if (minesCoords === null) return;
+    if (minesToDestroy > minesCoords.length) minesToDestroy = minesCoords.length;
+
+    for (var i = 0; i < minesToDestroy; i++) {
+        var randCoord = getRandomIntInclusive(0, minesCoords.length - 1);
+        gBoard[minesCoords[randCoord].i][minesCoords[randCoord].j].isMine = false;
+        gBoard[minesCoords[randCoord].i][minesCoords[randCoord].j].isShown = false;
+        minesCoords.splice(randCoord, 1);
+    }
+
+    setMinesNegsCount(gBoard);
+    renderBoard(gBoard, '.board');
+    console.log(`Exterminated ${minesToDestroy} mines`);
 }
 
 /******************************************************************************/
@@ -474,10 +519,10 @@ function floodFill(board, i, j) {
 
 function undoGame() {
     //idea : everytime we make a move - push the current board state to an array of boards??
-    if(!gGame.isOn) return;
-    
+    if (!gGame.isOn) return;
+
     var prevState = gBoardStates.pop();
-    if(prevState === null) return;
+    if (prevState === null) return;
 
     gBoard = getBoardFromState(prevState);
     renderBoard(gBoard, '.board');
@@ -503,7 +548,6 @@ function saveBoardState(board) {
         }
     }
 
-    console.log(boardState);
     return boardState;
 }
 
@@ -517,7 +561,6 @@ function getBoardFromState(boardState) {
         }
     }
 
-    console.log(boardState);
     for (var i = 0; i < boardState.mineArray.length; i++) {
         var mineCoord = boardState.mineArray[i];
         board[mineCoord.i][mineCoord.j].isMine = true;
