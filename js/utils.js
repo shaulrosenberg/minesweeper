@@ -48,15 +48,16 @@ function getEmptyLocations(board) {
     return emptyLocations;
 }
 
-function countMineNegs(rowIdx, colIdx) {
+// for state changes
+function countMineNegs(board, rowIdx, colIdx) {
     var count = 0;
 
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
-        if(i >= gBoard.length || i < 0 ) continue;
+        if(i >= board.length || i < 0 ) continue;
         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
             if (i === rowIdx && j === colIdx) continue;
-            if(j >= gBoard[0].length || j < 0) continue;
-            var cell = gBoard[i][j];
+            if(j >= board[0].length || j < 0) continue;
+            var cell = board[i][j];
             if(cell.isMine) count++;
         }
     }

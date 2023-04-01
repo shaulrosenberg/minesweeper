@@ -15,6 +15,7 @@ var gGame
 var gLevel = { SIZE: 4, MINES: 2 };
 var gTimerInterval
 var gHintsEnabled
+var gBoardStates
 
 
 
@@ -30,6 +31,7 @@ function onInit() {
         bestScore: localStorage.getItem('score'),
         hints: 3
     }
+    gBoardStates = [];
     gHintsEnabled = false;
     clearInterval(gTimerInterval);
     gTimerInterval = 0;
@@ -42,6 +44,7 @@ function onInit() {
     renderHints();
     restartTimer();
     document.querySelector('.btn-restart').innerText = '😃';
+    gBoardStates.push(saveBoardState(gBoard));
 }
 
 // build board - > after placing the mines randomly - > calc the cell contents by counting
@@ -93,7 +96,7 @@ function setMinesNegsCount(board) {
         for (var j = 0; j < board[0].length; j++) {
             const cell = board[i][j];
             if (cell.isMine) continue;
-            cell.minesAroundCount = countMineNegs(i, j);
+            cell.minesAroundCount = countMineNegs(board, i, j);
         }
     }
 }
@@ -143,16 +146,8 @@ function renderBoard(mat, selector) {
 
 /******************************************************************************/
 
-// pseudo : revealCell(this)
-// onClick one of the cells will reveal the contents on the current cell
-// handle the different outcomes - mine / empty / 0 > negCount
-// revealCell(i, j) - called when cellClicked(this, i, j) happens
 function onCellClicked(elCell, i, j) {
-    // const cell = gBoard[i][j]
-    // case mine:  revealAllMines() call gameOver() or gameLife--
-    // case empty: expandShown(board, elCell, i, j)
-    // case number: revealCell(i, j);
-    // startTimer() if first click;
+    
     if (!gGame.isOn) return;
     gGame.clicks++;
 
@@ -220,16 +215,12 @@ function onCellClicked(elCell, i, j) {
 
         if (gGame.lives === 0) {
             revealAllMines(gBoard);
-            gameOver('☠');
+            gameOver('😵');
         }
-        // else if (gGame.lives > 0) {
-        //     // flip mine back if you have lives left
-        //     setTimeout(function () {
-        //         cell.isShown = false;
-        //         renderBoard(gBoard, '.board');
-        //     }, 2000, cell);
-        // }
     }
+
+    // save board state for undo
+    gBoardStates.push(saveBoardState(gBoard));
 }
 
 /******************************************************************************/
@@ -262,6 +253,7 @@ function onCellMarked(e, elCell, i, j) {
         gGame.markedCount++;
     }
 
+    gBoardStates.push(saveBoardState(gBoard));
     checkGameOver();
 }
 
@@ -476,4 +468,72 @@ function floodFill(board, i, j) {
     floodFill(board, i + 1, j);
     floodFill(board, i, j - 1);
     floodFill(board, i, j + 1);
+}
+
+/******************************************************************************/
+
+function undoGame() {
+    //idea : everytime we make a move - push the current board state to an array of boards??
+    if(!gGame.isOn) return;
+    
+    var prevState = gBoardStates.pop();
+    if(prevState === null) return;
+
+    gBoard = getBoardFromState(prevState);
+    renderBoard(gBoard, '.board');
+}
+
+function saveBoardState(board) {
+
+    var boardState = {
+        markedArray: [],
+        mineArray: [],
+        shownArray: [],
+        rows: board.length,
+        cols: board[0].length
+    }
+
+    for (var i = 0; i < board.length; i++) {
+        for (var j = 0; j < board[0].length; j++) {
+            var cell = board[i][j];
+            var coord = { i: i, j: j }
+            if (cell.isShown) boardState.shownArray.push(coord);
+            if (cell.isMarked) boardState.markedArray.push(coord);
+            if (cell.isMine) boardState.mineArray.push(coord);
+        }
+    }
+
+    console.log(boardState);
+    return boardState;
+}
+
+function getBoardFromState(boardState) {
+    var board = [];
+
+    for (var i = 0; i < boardState.rows; i++) {
+        board[i] = [];
+        for (var j = 0; j < boardState.cols; j++) {
+            board[i][j] = createCell(0);
+        }
+    }
+
+    console.log(boardState);
+    for (var i = 0; i < boardState.mineArray.length; i++) {
+        var mineCoord = boardState.mineArray[i];
+        board[mineCoord.i][mineCoord.j].isMine = true;
+    }
+
+    for (var i = 0; i < boardState.shownArray.length; i++) {
+        var shownCoord = boardState.shownArray[i];
+        board[shownCoord.i][shownCoord.j].isShown = true;
+    }
+
+    for (var i = 0; i < boardState.markedArray.length; i++) {
+        var markedCoord = boardState.markedArray[i];
+        board[markedCoord.i][markedCoord.j].isMarked = true;
+    }
+
+    setMinesNegsCount(board);
+
+    return board;
 }

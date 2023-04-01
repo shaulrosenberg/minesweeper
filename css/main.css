@@ -89,7 +89,7 @@ body {
 }
 
 .hints {
-    width: 200px;
+    
     margin: auto;
     font-size: 2em;
 }
@@ -112,6 +112,32 @@ body {
     border-radius: 5%;
 }
 
+.undo button {
+    width: 100px;
+    height: 50px;
+    font-weight: bold;
+    border: 3px solid rgb(255, 152, 153);
+    background-color: rgb(255, 167, 166);
+    border-radius: 5%;
+}
+
+.mega-hint button {
+    width: 100px;
+    height: 50px;
+    font-weight: bold;
+    border: 3px solid rgb(255, 152, 153);
+    background-color: rgb(255, 167, 166);
+    border-radius: 5%;
+}
+
+.undo {
+    display: inline-block;
+}
+
+.mega-hint {
+    display: inline-block;
+}
+
 .best-score {
     color: rgb(190, 101, 101);
 }
@@ -125,3 +151,4 @@ footer {
     color: white;
     text-align: center;
 }
+
